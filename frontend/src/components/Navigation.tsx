@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LogOut, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -8,123 +9,84 @@ export default function Navigation() {
   const { isAuthenticated, user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const activeStyle = {
-    color: '#007bff',
-    fontWeight: 'bold',
-    borderBottom: '2px solid #007bff',
-  };
-
-  const linkStyle = {
-    padding: '0.5rem 1rem',
-    textDecoration: 'none',
-    color: 'var(--text-primary)',
-    display: 'inline-block',
-    transition: 'color 0.3s ease',
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
-    <nav style={{
-      background: 'var(--bg-secondary)',
-      padding: '1rem 2rem',
-      borderBottom: '1px solid var(--border-color)',
-      marginBottom: '2rem',
-      boxShadow: `0 2px 4px var(--shadow)`,
-      transition: 'background-color 0.3s ease, border-color 0.3s ease',
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '1rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0, color: '#007bff' }}>Business Dashboard</h2>
-          {isAuthenticated && (
-            <div style={{ 
-              display: 'flex', 
-              gap: '1rem',
-              flexWrap: 'wrap',
-            }}>
+    <nav className="border-b bg-card shadow-sm">
+      <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <h2 className="text-lg font-semibold tracking-tight text-card-foreground">Business Dashboard</h2>
+            <div className="hidden gap-2 md:flex">
               <Link
                 to="/"
-                style={location.pathname === '/' ? { ...linkStyle, ...activeStyle } : linkStyle}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                  location.pathname === '/'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent'
+                }`}
               >
                 Dashboard
               </Link>
               <Link
                 to="/upload"
-                style={location.pathname === '/upload' ? { ...linkStyle, ...activeStyle } : linkStyle}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                  location.pathname === '/upload'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent'
+                }`}
               >
                 Upload CSV
               </Link>
               <Link
                 to="/forecast"
-                style={location.pathname === '/forecast' ? { ...linkStyle, ...activeStyle } : linkStyle}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                  location.pathname === '/forecast'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent'
+                }`}
               >
                 Forecast
               </Link>
               <Link
                 to="/transform"
-                style={location.pathname === '/transform' ? { ...linkStyle, ...activeStyle } : linkStyle}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                  location.pathname === '/transform'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent'
+                }`}
               >
                 Transform
               </Link>
             </div>
+          </div>
+          {user && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleTheme}
+                className="rounded-lg border bg-background p-2 text-muted-foreground transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
+                title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              >
+                {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </button>
+              <span className="hidden text-sm text-muted-foreground sm:block">{user.email}</span>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
           )}
         </div>
-        {isAuthenticated && user && (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '1rem',
-            flexWrap: 'wrap',
-          }}>
-            <button
-              onClick={toggleTheme}
-              style={{
-                padding: '0.5rem',
-                background: 'transparent',
-                border: '1px solid var(--border-color)',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '1.2rem',
-                color: 'var(--text-primary)',
-                transition: 'all 0.3s ease',
-              }}
-              title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            >
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
-            <span style={{ 
-              color: 'var(--text-secondary)',
-              fontSize: '0.9rem',
-            }}
-            className="hide-on-mobile"
-            >
-              {user.email}
-            </span>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-              }}
-            >
-              Logout
-            </button>
-          </div>
-        )}
       </div>
     </nav>
   );

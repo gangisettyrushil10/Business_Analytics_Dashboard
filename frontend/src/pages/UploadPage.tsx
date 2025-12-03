@@ -1,4 +1,5 @@
 import { useState, ChangeEvent } from "react";
+import { UploadCloud } from "lucide-react";
 import { uploadCSV } from "../api/client";
 import { UploadResponse } from "../types";
 import DataQualityReport from "../components/DataQualityReport";
@@ -39,87 +40,80 @@ export default function UploadPage() {
   };
 
   return (
-    <div style={{ 
-      padding: '1rem', 
-      maxWidth: '600px', 
-      margin: '0 auto' 
-    }}>
-      <h1 style={{ color: 'var(--text-primary)' }}>Upload CSV File</h1>
-      
-      <div style={{ marginBottom: '1rem' }}>
-        <p style={{ color: 'var(--text-primary)' }}>Upload a CSV file with sales data.</p>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-          Required columns: date, amount, category, customerID
+    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div>
+        <p className="text-sm text-muted-foreground">Data ingestion</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Upload sales data</h1>
+        <p className="text-sm text-muted-foreground">
+          Provide a CSV with the columns <code>date</code>, <code>amount</code>, <code>category</code>,{' '}
+          <code>customerID</code>.
         </p>
       </div>
-  
-      <div style={{ marginBottom: '1rem' }}>
-        <input
-          type="file"
-          accept=".csv"
-          onChange={handleFileChange}
-          disabled={uploading}
-          style={{ 
-            marginBottom: '1rem',
-            color: 'var(--text-primary)',
-          }}
-        />
-      </div>
-  
-      {selectedFile && (
-        <div style={{ 
-          marginBottom: '1rem', 
-          padding: '1rem', 
-          background: 'var(--bg-secondary)', 
-          borderRadius: '4px',
-          border: `1px solid var(--border-color)`,
-        }}>
-          <p style={{ margin: '0.5rem 0', color: 'var(--text-primary)' }}>
-            <strong>Selected file:</strong> {selectedFile.name}
-          </p>
-          <p style={{ margin: '0.5rem 0', color: 'var(--text-primary)' }}>
-            <strong>Size:</strong> {(selectedFile.size / 1024).toFixed(2)} KB
-          </p>
-        </div>
-      )}
-  
-      <button
-        onClick={handleUpload}
-        disabled={!selectedFile || uploading}
-        style={{
-          padding: '0.75rem 1.5rem',
-          fontSize: '1rem',
-          backgroundColor: '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: uploading ? 'not-allowed' : 'pointer',
-          opacity: uploading ? 0.6 : 1,
-        }}
-      >
-        {uploading ? 'Uploading...' : 'Upload CSV'}
-      </button>
-  
-      {result && (
-        <div style={{ marginTop: '1rem' }}>
-          <div style={{ 
-            padding: '1rem', 
-            background: 'var(--bg-secondary)', 
-            borderRadius: '4px', 
-            marginBottom: '1rem',
-            border: `1px solid var(--border-color)`,
-          }}>
-            <p style={{ margin: '0.5rem 0', color: 'var(--text-primary)' }}>
-              <strong>Success!</strong>
-            </p>
-            <p style={{ margin: '0.5rem 0', color: 'var(--text-primary)' }}>
-              Rows inserted: {result.rows_inserted}
-            </p>
-            <p style={{ margin: '0.5rem 0', color: 'var(--text-primary)' }}>
-              Filename: {result.filename}
-            </p>
+
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <UploadCloud className="h-6 w-6" />
           </div>
-          
+          <div>
+            <h2 className="text-lg font-semibold">Select CSV file</h2>
+            <p className="text-sm text-muted-foreground">We validate schema and data quality automatically.</p>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-4">
+          <input
+            type="file"
+            accept=".csv"
+            disabled={uploading}
+            onChange={handleFileChange}
+            className="w-full rounded-lg border border-dashed border-input bg-background px-4 py-3 text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+
+          {selectedFile && (
+            <div className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-card-foreground">{selectedFile.name}</p>
+              <p>{(selectedFile.size / 1024).toFixed(2)} KB</p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={!selectedFile || uploading}
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {uploading ? 'Uploading…' : 'Upload CSV'}
+            </button>
+            {uploading && <span className="text-sm text-muted-foreground">Processing file…</span>}
+          </div>
+        </div>
+      </div>
+
+      {result && (
+        <div className="space-y-4">
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-semibold">Upload summary</h3>
+            <p className="mt-1 text-sm text-muted-foreground">We ingested your dataset successfully.</p>
+            <dl className="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+              <div className="rounded-lg bg-muted/40 p-3">
+                <dt className="text-muted-foreground">Rows inserted</dt>
+                <dd className="text-2xl font-semibold text-card-foreground">
+                  {result.rows_inserted.toLocaleString()}
+                </dd>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <dt className="text-muted-foreground">Filename</dt>
+                <dd className="font-medium text-card-foreground">{result.filename}</dd>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <dt className="text-muted-foreground">Status</dt>
+                <dd className="font-medium text-card-foreground">Ready for analysis</dd>
+              </div>
+            </dl>
+          </div>
+
           {result.summary && (result.summary.has_warnings || result.summary.has_errors) && (
             <DataQualityReport
               warnings={result.warnings || []}

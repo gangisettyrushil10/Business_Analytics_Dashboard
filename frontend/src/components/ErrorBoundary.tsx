@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -22,7 +23,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    // update state so the next render will show the fallback ui
     return {
       hasError: true,
       error,
@@ -31,18 +31,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // log error to console (in production, you'd send this to an error tracking service)
     console.error('error boundary caught an error:', error, errorInfo);
     
     this.setState({
       error,
       errorInfo,
     });
-
-    // in production, send to error tracking service like sentry
-    // if (process.env.NODE_ENV === 'production') {
-    //   Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
-    // }
   }
 
   handleReset = () => {
@@ -55,52 +49,26 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // custom fallback ui
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      // default fallback ui
       return (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '400px',
-          padding: '2rem',
-          background: 'var(--bg-secondary)',
-          borderRadius: '8px',
-          border: '1px solid var(--border-color)',
-          margin: '2rem',
-        }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚠️</div>
-          <h2 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>
-            something went wrong
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', textAlign: 'center' }}>
-            we encountered an unexpected error. don't worry, your data is safe.
+        <div className="mx-auto my-8 flex min-h-[320px] max-w-3xl flex-col items-center justify-center rounded-xl border bg-card p-10 text-center shadow-sm">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <AlertTriangle className="h-8 w-8" />
+          </div>
+          <h2 className="text-2xl font-semibold tracking-tight">Something went wrong</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We hit an unexpected error, but your data remains safe. Please try again.
           </p>
-          
+
           {process.env.NODE_ENV === 'development' && this.state.error && (
-            <details style={{
-              width: '100%',
-              maxWidth: '600px',
-              marginBottom: '1rem',
-              padding: '1rem',
-              background: 'var(--bg-primary)',
-              borderRadius: '4px',
-              border: '1px solid var(--border-color)',
-            }}>
-              <summary style={{ cursor: 'pointer', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-                error details (dev only)
+            <details className="mt-6 w-full rounded-xl border bg-muted/40 p-4 text-left text-sm">
+              <summary className="cursor-pointer font-semibold text-card-foreground">
+                Error details (dev only)
               </summary>
-              <pre style={{
-                color: 'var(--text-primary)',
-                fontSize: '0.875rem',
-                overflow: 'auto',
-                whiteSpace: 'pre-wrap',
-              }}>
+              <pre className="mt-3 overflow-auto rounded-lg bg-card p-3 text-xs text-muted-foreground">
                 {this.state.error.toString()}
                 {this.state.errorInfo?.componentStack}
               </pre>
@@ -109,17 +77,9 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <button
             onClick={this.handleReset}
-            style={{
-              padding: '0.75rem 1.5rem',
-              fontSize: '1rem',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
+            className="mt-6 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
-            try again
+            Try again
           </button>
         </div>
       );
@@ -128,4 +88,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-

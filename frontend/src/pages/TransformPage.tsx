@@ -1,4 +1,5 @@
 import { useState, ChangeEvent } from 'react';
+import { FileSpreadsheet, WandSparkles, Trash2 } from 'lucide-react';
 import { previewTransform } from '../api/client';
 import { TransformPreviewResponse } from '../types';
 
@@ -8,14 +9,15 @@ export default function TransformPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // transform rules
   const [renameColumns, setRenameColumns] = useState<Record<string, string>>({});
   const [mapCategories, setMapCategories] = useState<Record<string, string>>({});
   const [computedFields, setComputedFields] = useState<Record<string, string>>({});
   
-  // available columns and categories (from preview)
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+
+  const fieldClass =
+    "rounded-lg border bg-background px-3 py-2 text-sm transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -27,7 +29,6 @@ export default function TransformPage() {
       setMapCategories({});
       setComputedFields({});
       
-      // auto-load preview to get available columns
       setLoading(true);
       try {
         const result = await previewTransform(file);
@@ -36,16 +37,13 @@ export default function TransformPage() {
           if (result.preview && result.preview.length > 0) {
             const categories = new Set<string>();
             result.preview.forEach((row: any) => {
-              if (row.category) {
-                categories.add(row.category);
-              }
+              if (row.category) categories.add(row.category);
             });
             setAvailableCategories(Array.from(categories));
           }
         }
-      } catch (err: any) {
-        // ignore errors on initial load, user can preview manually
-        console.error('Auto-preview failed:', err);
+      } catch (err) {
+        console.error('Auto-preview failed', err);
       } finally {
         setLoading(false);
       }
@@ -64,25 +62,18 @@ export default function TransformPage() {
     try {
       const result = await previewTransform(
         selectedFile,
-        Object.keys(renameColumns).length > 0 ? renameColumns : undefined,
-        Object.keys(mapCategories).length > 0 ? mapCategories : undefined,
-        Object.keys(computedFields).length > 0 ? computedFields : undefined
+        Object.keys(renameColumns).length ? renameColumns : undefined,
+        Object.keys(mapCategories).length ? mapCategories : undefined,
+        Object.keys(computedFields).length ? computedFields : undefined
       );
-      
       setPreview(result);
-      
-      // update available columns and categories from preview
       if (result.columns) {
         setAvailableColumns(result.columns);
       }
-      
-      // extract unique categories from preview data
       if (result.preview && result.preview.length > 0) {
         const categories = new Set<string>();
         result.preview.forEach((row: any) => {
-          if (row.category) {
-            categories.add(row.category);
-          }
+          if (row.category) categories.add(row.category);
         });
         setAvailableCategories(Array.from(categories));
       }
@@ -124,144 +115,163 @@ export default function TransformPage() {
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
-      <h1>Data Transformations</h1>
-      <p style={{ color: '#666', marginBottom: '2rem' }}>
-        Upload a CSV file and preview transformations before applying them.
-      </p>
-
-      {/* File Upload */}
-      <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'white', borderRadius: '8px' }}>
-        <h2 style={{ marginTop: 0 }}>1. Select File</h2>
-        <input
-          type="file"
-          accept=".csv"
-          onChange={handleFileChange}
-          disabled={loading}
-          style={{ marginBottom: '1rem' }}
-        />
-        {selectedFile && (
-          <div style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '4px' }}>
-            <p style={{ margin: 0 }}>
-              <strong>Selected:</strong> {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-            </p>
-          </div>
-        )}
+    <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div>
+        <p className="text-sm text-muted-foreground">Data preparation</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Transform datasets</h1>
+        <p className="text-sm text-muted-foreground">
+          Apply renames, mappings, and computed metrics before committing data to the warehouse.
+        </p>
       </div>
 
-      {/* Transform Rules */}
-      <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'white', borderRadius: '8px' }}>
-        <h2 style={{ marginTop: 0 }}>2. Define Transformations</h2>
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <FileSpreadsheet className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">1. Select file</h2>
+            <p className="text-sm text-muted-foreground">
+              Supported format: CSV up to 10MB. We automatically detect schema.
+            </p>
+          </div>
+        </div>
 
-        {/* Rename Columns */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h3>Rename Columns</h3>
-          {availableColumns.length > 0 ? (
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
+        <div className="mt-6 space-y-4">
+          <input
+            type="file"
+            accept=".csv"
+            disabled={loading}
+            onChange={handleFileChange}
+            className="w-full rounded-lg border border-dashed border-input bg-background px-4 py-3 text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          {selectedFile && (
+            <div className="rounded-xl border bg-muted/50 p-4 text-sm text-muted-foreground">
+              {selectedFile.name} · {(selectedFile.size / 1024).toFixed(2)} KB
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-8 rounded-xl border bg-card p-6 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <WandSparkles className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">2. Define transformations</h2>
+            <p className="text-sm text-muted-foreground">
+              Specify renames, category mappings, and computed fields. Preview before committing.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-md font-semibold">Rename columns</h3>
+          {availableColumns.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Upload a file to detect available columns.</p>
+          ) : (
+            <div className="mt-3 space-y-3">
               {availableColumns.map((col) => (
-                <div key={col} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ minWidth: '150px' }}>{col} →</span>
+                <div key={col} className="flex flex-col gap-2 rounded-xl border bg-muted/30 p-3 sm:flex-row sm:items-center">
+                  <span className="text-sm font-medium text-card-foreground sm:min-w-[160px]">
+                    {col}
+                  </span>
                   <input
                     type="text"
                     placeholder="New column name"
                     value={renameColumns[col] || ''}
                     onChange={(e) => handleRenameColumn(col, e.target.value)}
-                    style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                    className={`${fieldClass} flex-1`}
                   />
                 </div>
               ))}
             </div>
-          ) : (
-            <p style={{ color: '#666' }}>Upload a file to see available columns</p>
           )}
         </div>
 
-        {/* Map Categories */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h3>Map Categories</h3>
-          {availableCategories.length > 0 ? (
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
+        <div>
+          <h3 className="text-md font-semibold">Map categories</h3>
+          {availableCategories.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Preview the dataset to extract categories.</p>
+          ) : (
+            <div className="mt-3 space-y-3">
               {availableCategories.map((cat) => (
-                <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ minWidth: '150px' }}>{cat} →</span>
+                <div
+                  key={cat}
+                  className="flex flex-col gap-2 rounded-xl border bg-muted/30 p-3 sm:flex-row sm:items-center"
+                >
+                  <span className="text-sm font-medium text-card-foreground sm:min-w-[160px]">
+                    {cat}
+                  </span>
                   <input
                     type="text"
                     placeholder="New category value"
                     value={mapCategories[cat] || ''}
                     onChange={(e) => handleMapCategory(cat, e.target.value)}
-                    style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                    className={`${fieldClass} flex-1`}
                   />
                 </div>
               ))}
             </div>
-          ) : (
-            <p style={{ color: '#666' }}>Upload a file and preview to see available categories</p>
           )}
         </div>
 
-        {/* Computed Fields */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h3>Computed Fields</h3>
-          <div style={{ marginBottom: '1rem' }}>
-            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
-              Create new fields using formulas. Use column names in formulas (e.g., "amount * 1.0825").
-            </p>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder="Field name (e.g., amount_with_tax)"
-                id="computed-field-name"
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-              />
-              <span>=</span>
-              <input
-                type="text"
-                placeholder="Formula (e.g., amount * 1.0825)"
-                id="computed-field-formula"
-                style={{ flex: 2, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-              />
-              <button
-                onClick={() => {
-                  const nameInput = document.getElementById('computed-field-name') as HTMLInputElement;
-                  const formulaInput = document.getElementById('computed-field-formula') as HTMLInputElement;
-                  if (nameInput && formulaInput && nameInput.value && formulaInput.value) {
-                    handleComputedField(nameInput.value, formulaInput.value);
-                    nameInput.value = '';
-                    formulaInput.value = '';
-                  }
-                }}
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                Add
-              </button>
-            </div>
+        <div>
+          <h3 className="text-md font-semibold">Computed fields</h3>
+          <p className="text-sm text-muted-foreground">
+            Use column names in formulas, e.g. <code>amount * 1.0825</code>.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border bg-muted/30 p-4 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              placeholder="Field name"
+              id="computed-field-name"
+              className={`${fieldClass} flex-1`}
+            />
+            <span className="hidden text-muted-foreground sm:block">=</span>
+            <input
+              type="text"
+              placeholder="Formula"
+              id="computed-field-formula"
+              className={`${fieldClass} flex-[2]`}
+            />
+            <button
+              type="button"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90"
+              onClick={() => {
+                const nameInput = document.getElementById("computed-field-name") as HTMLInputElement;
+                const formulaInput = document.getElementById(
+                  "computed-field-formula",
+                ) as HTMLInputElement;
+                if (nameInput?.value && formulaInput?.value) {
+                  handleComputedField(nameInput.value, formulaInput.value);
+                  nameInput.value = "";
+                  formulaInput.value = "";
+                }
+              }}
+            >
+              Add field
+            </button>
           </div>
-          
+
           {Object.keys(computedFields).length > 0 && (
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
+            <div className="mt-4 space-y-3">
               {Object.entries(computedFields).map(([name, formula]) => (
-                <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.5rem', background: '#f8f9fa', borderRadius: '4px' }}>
-                  <span style={{ fontWeight: 'bold' }}>{name}</span>
-                  <span>=</span>
-                  <span style={{ flex: 1 }}>{formula}</span>
+                <div
+                  key={name}
+                  className="flex flex-col gap-3 rounded-xl border bg-card/60 p-4 text-sm text-card-foreground sm:flex-row sm:items-center"
+                >
+                  <span className="font-semibold">{name}</span>
+                  <span className="hidden text-muted-foreground sm:block">=</span>
+                  <span className="flex-1 text-muted-foreground">{formula}</span>
                   <button
-                    onClick={() => handleComputedField(name, '')}
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                      background: '#dc3545',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                    }}
+                    type="button"
+                    onClick={() => handleComputedField(name, "")}
+                    className="inline-flex items-center gap-1 rounded-lg border bg-background px-3 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-accent"
                   >
+                    <Trash2 className="h-4 w-4" />
                     Remove
                   </button>
                 </div>
@@ -270,65 +280,53 @@ export default function TransformPage() {
           )}
         </div>
 
-        {/* Preview Button */}
         <button
+          type="button"
           onClick={handlePreview}
           disabled={!selectedFile || loading}
-          style={{
-            padding: '0.75rem 1.5rem',
-            fontSize: '1rem',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: (!selectedFile || loading) ? 0.6 : 1,
-          }}
+          className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? 'Generating Preview...' : 'Preview Transformations'}
+          {loading ? "Generating preview…" : "Preview transformations"}
         </button>
       </div>
 
-      {/* Error Message */}
       {error && (
-        <div style={{ marginBottom: '2rem', padding: '1rem', background: '#fee', color: '#c00', borderRadius: '4px' }}>
-          <strong>Error:</strong> {error}
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-primary">
+          {error}
         </div>
       )}
 
-      {/* Preview Table */}
       {preview && preview.success && (
-        <div style={{ padding: '1.5rem', background: 'white', borderRadius: '8px' }}>
-          <h2 style={{ marginTop: 0 }}>
-            Preview ({preview.preview_rows} of {preview.total_rows} rows)
-          </h2>
-          
-          {preview.preview.length > 0 ? (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ background: '#f8f9fa', position: 'sticky', top: 0 }}>
+        <div className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
+          <div>
+            <h2 className="text-lg font-semibold">
+              Preview ({preview.preview_rows} of {preview.total_rows} rows)
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Review a sample of the transformed dataset before committing changes.
+            </p>
+          </div>
+
+          {preview.preview.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No preview rows available.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full min-w-[600px] text-sm">
+                <thead className="bg-muted text-xs uppercase text-muted-foreground">
                   <tr>
                     {preview.columns.map((col) => (
-                      <th
-                        key={col}
-                        style={{
-                          padding: '0.75rem',
-                          textAlign: 'left',
-                          borderBottom: '2px solid #dee2e6',
-                          fontWeight: 'bold',
-                        }}
-                      >
+                      <th key={col} className="px-4 py-3 text-left font-semibold">
                         {col}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border bg-card">
                   {preview.preview.map((row: any, idx: number) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #dee2e6' }}>
+                    <tr key={idx} className="transition-colors hover:bg-accent">
                       {preview.columns.map((col) => (
-                        <td key={col} style={{ padding: '0.75rem' }}>
-                          {row[col] !== null && row[col] !== undefined ? String(row[col]) : '-'}
+                        <td key={col} className="px-4 py-3">
+                          {row[col] !== null && row[col] !== undefined ? String(row[col]) : "—"}
                         </td>
                       ))}
                     </tr>
@@ -336,12 +334,9 @@ export default function TransformPage() {
                 </tbody>
               </table>
             </div>
-          ) : (
-            <p style={{ color: '#666' }}>No preview data available</p>
           )}
         </div>
       )}
     </div>
   );
 }
-

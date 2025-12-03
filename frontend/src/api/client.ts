@@ -34,7 +34,7 @@ export const uploadCSV = async (file: File) => {
 
 export const getRevenue = async (rangeDays: number = 30) => {
   const response = await apiClient.get('/stats/revenue', {
-    params: { range: rangeDays },
+    params: { range_days: rangeDays },
   });
   return response.data;
 };

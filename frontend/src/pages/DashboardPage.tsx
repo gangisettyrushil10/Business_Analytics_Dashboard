@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
-import { getRevenue, getSalesByCategory, getCustomerStats, generateInsights } from "../api/client";
+import { useState, useEffect, useMemo } from "react";
+import { DollarSign, TrendingUp, Users, Layers, Sparkles, AlertTriangle } from "lucide-react";
+import { getRevenue, getSalesByCategory, getCustomerStats, generateInsights, getAnomalies } from "../api/client";
 import {
     RevenueResponse, 
     CategoryResponse, 
-    CustomerStatsResponse
+    CustomerStatsResponse,
+    AnomalyResponse,
 } from "../types";
 import RevenueChart from "../components/RevenueChart";
 import CategoryChart from "../components/CategoryChart";
@@ -12,6 +14,11 @@ import InsightsBox from "../components/InsightsBox";
 import { ChartSkeleton, CardSkeleton } from "../components/LoadingSkeleton";
 import DateRangePicker from "../components/DateRangePicker";
 import { useToast } from "../contexts/ToastContext";
+import { useAuth } from "../contexts/AuthContext";
+import SalesDetailDrawer from "../components/SalesDetailDrawer";
+
+const formatCurrency = (value: number) =>
+  `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
 export default function DashboardPage() {
     const [revenueData, setRevenueData] = useState<RevenueResponse | null>(null);
@@ -21,14 +28,27 @@ export default function DashboardPage() {
     const [rangeDays, setRangeDays] = useState(30);
     const [insights, setInsights] = useState<string | null>(null);
     const [insightsLoading, setInsightsLoading] = useState(false);
+    const [showAnomalies, setShowAnomalies] = useState(false);
+    const [anomalyData, setAnomalyData] = useState<AnomalyResponse | null>(null);
+    const [anomalyErrorShown, setAnomalyErrorShown] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [drawerFilterType, setDrawerFilterType] = useState<"date" | "category" | null>(null);
+    const [drawerFilterValue, setDrawerFilterValue] = useState<string | null>(null);
     const { showToast } = useToast();
+    const { user } = useAuth();
+
+    const greeting = useMemo(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good morning";
+        if (hour < 18) return "Good afternoon";
+        return "Good evening";
+    }, []);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             
             try {
-                // fetch all three endpoints in parallel
                 const [revenue, category, customers] = await Promise.all([
                     getRevenue(rangeDays),
                     getSalesByCategory(),
@@ -38,7 +58,6 @@ export default function DashboardPage() {
                 setRevenueData(revenue);
                 setCategoryData(category);
                 setCustomerStats(customers);
-                showToast('Dashboard data loaded successfully', 'success');
             } catch (err: any) {
                 showToast(err.response?.data?.detail || 'Failed to load dashboard data', 'error');
             } finally {
@@ -48,6 +67,46 @@ export default function DashboardPage() {
 
         fetchData();
     }, [rangeDays, showToast]);
+
+    useEffect(() => {
+        if (!showAnomalies || !revenueData) {
+            // Reset error flag when anomalies are turned off
+            if (!showAnomalies) {
+                setAnomalyErrorShown(false);
+            }
+            return;
+        }
+
+        const fetchAnomalies = async () => {
+            try {
+                const anomalies = await getAnomalies(rangeDays);
+                setAnomalyData(anomalies);
+                setAnomalyErrorShown(false); // Reset on success
+            } catch (err: any) {
+                const errorMessage = err.response?.data?.detail || 'Failed to load anomalies';
+                // Only show error once per toggle session
+                if (!anomalyErrorShown) {
+                    showToast(errorMessage, 'error');
+                    setAnomalyErrorShown(true);
+                }
+            }
+        };
+
+        fetchAnomalies();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showAnomalies, rangeDays, revenueData]);
+
+    const handleDateClick = (date: string) => {
+        setDrawerFilterType("date");
+        setDrawerFilterValue(date);
+        setDrawerOpen(true);
+    };
+
+    const handleCategoryClick = (category: string) => {
+        setDrawerFilterType("category");
+        setDrawerFilterValue(category);
+        setDrawerOpen(true);
+    };
 
     const handleGenerateInsights = async () => {
         if (!revenueData || !categoryData || !customerStats) {
@@ -72,144 +131,199 @@ export default function DashboardPage() {
             setInsights(response.insights);
             showToast('AI insights generated successfully', 'success');
         } catch (err: any) {
-            showToast(err.response?.data?.detail || 'Failed to generate insights', 'error');
+            const errorMessage = err.response?.data?.detail || err.message || 'Failed to generate insights';
+            showToast(errorMessage, 'error');
+            // Clear insights on error so user knows it failed
+            setInsights(null);
         } finally {
             setInsightsLoading(false);
         }
     };
+
+    const totalRevenue = revenueData?.data.reduce((sum, point) => sum + point.revenue, 0) || 0;
+    const avgDailyRevenue = revenueData && revenueData.data.length
+        ? totalRevenue / revenueData.data.length
+        : 0;
+    const totalCategories = categoryData?.categories.length || 0;
+    const totalCustomers = customerStats?.total_customers || 0;
+
+    const statCards = [
+        {
+            label: "Total Revenue",
+            value: formatCurrency(totalRevenue),
+            helper: `Last ${rangeDays} days`,
+            icon: DollarSign,
+        },
+        {
+            label: "Avg Daily Revenue",
+            value: formatCurrency(avgDailyRevenue),
+            helper: "Per day average",
+            icon: TrendingUp,
+        },
+        {
+            label: "Total Customers",
+            value: totalCustomers.toLocaleString(),
+            helper: "Active accounts",
+            icon: Users,
+        },
+        {
+            label: "Categories",
+            value: `${totalCategories}`,
+            helper: "Product types",
+            icon: Layers,
+        },
+    ];
     
     return (
-        <div style={{ 
-            padding: '1rem',
-            maxWidth: '1200px', 
-            margin: '0 auto',
-        }}>
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                marginBottom: '2rem',
-                flexWrap: 'wrap',
-                gap: '1rem',
-            }}>
-                <h1 style={{ 
-                    margin: 0,
-                    color: 'var(--text-primary)',
-                    fontSize: 'clamp(1.5rem, 4vw, 2rem)',
-                }}>
-                    Business Analytics Dashboard
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+            {/* Header */}
+            <div className="mb-6">
+                <h1 className="text-3xl font-semibold tracking-tight">
+                    {greeting}, {user?.email?.split("@")[0] || "demo"}
                 </h1>
-                
-                <div style={{ 
-                    display: 'flex', 
-                    gap: '1rem', 
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                }}>
-                    <DateRangePicker rangeDays={rangeDays} onChange={setRangeDays} />
-                    
-                    <button
-                        onClick={handleGenerateInsights}
-                        disabled={insightsLoading || !revenueData || !categoryData || !customerStats}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            fontSize: 'clamp(0.875rem, 2vw, 1rem)',
-                            backgroundColor: '#667eea',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: (insightsLoading || !revenueData || !categoryData || !customerStats) ? 'not-allowed' : 'pointer',
-                            opacity: (insightsLoading || !revenueData || !categoryData || !customerStats) ? 0.6 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            whiteSpace: 'nowrap',
-                        }}
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Here&apos;s your business analytics overview
+                </p>
+            </div>
+
+            {/* Stat Cards */}
+            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                {statCards.map(({ label, value, helper, icon: Icon }) => (
+                    <div
+                        key={label}
+                        className="group relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-lg"
                     >
-                        <span>🤖</span>
-                        <span>{insightsLoading ? 'Generating...' : 'Generate Insights'}</span>
-                    </button>
+                        <div className="absolute left-0 top-0 h-1 w-full bg-linear-to-r from-primary/50 to-primary" />
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                                <p className="mt-2 text-3xl font-bold tracking-tight">{value}</p>
+                            </div>
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                                <Icon className="h-6 w-6 text-primary" />
+                            </div>
+                        </div>
+                        <p className="mt-4 text-xs text-muted-foreground">{helper}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Analytics Overview Controls */}
+            <div className="mb-6 rounded-xl border bg-card p-6 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-semibold">Analytics Overview</h2>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <DateRangePicker rangeDays={rangeDays} onChange={setRangeDays} />
+                        
+                        <button
+                            type="button"
+                            onClick={() => setShowAnomalies(!showAnomalies)}
+                            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                                showAnomalies
+                                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                    : "bg-background hover:bg-accent"
+                            }`}
+                        >
+                            <AlertTriangle className="h-4 w-4" />
+                            Show Anomalies
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleGenerateInsights}
+                            disabled={insightsLoading || !revenueData || !categoryData || !customerStats}
+                            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <Sparkles className="h-4 w-4" />
+                            {insightsLoading ? "Generating…" : "Generate Insights"}
+                        </button>
+                    </div>
                 </div>
             </div>
-    
+
             {loading ? (
-                <>
+                <div className="space-y-6">
                     <ChartSkeleton />
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+                    <div className="grid gap-6 md:grid-cols-2">
                         <CardSkeleton />
                         <CardSkeleton />
                     </div>
-                    <CardSkeleton />
-                </>
+                </div>
             ) : (
                 <>
-                    {revenueData && revenueData.data.length > 0 ? (
-                        <RevenueChart data={revenueData.data} />
-                    ) : (
-                        <div style={{ 
-                            padding: '2rem', 
-                            background: 'var(--bg-secondary)', 
-                            borderRadius: '8px', 
-                            marginBottom: '2rem', 
-                            textAlign: 'center',
-                            color: 'var(--text-primary)',
-                            border: `1px solid var(--border-color)`,
-                        }}>
-                            <p>No revenue data available. Upload a CSV file to see charts.</p>
-                        </div>
-                    )}
-
-                    <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-                        gap: '2rem', 
-                        marginBottom: '2rem' 
-                    }}>
-                        {categoryData && categoryData.categories.length > 0 ? (
-                            <>
-                                <CategoryChart data={categoryData.categories} />
-                                <div style={{ 
-                                    padding: '1rem', 
-                                    background: 'var(--bg-secondary)', 
-                                    borderRadius: '8px',
-                                    border: `1px solid var(--border-color)`,
-                                    color: 'var(--text-primary)',
-                                }}>
-                                    <h3 style={{ color: 'var(--text-primary)' }}>Category Summary</h3>
-                                    <p><strong>Total Revenue:</strong> ${categoryData.total_revenue.toFixed(2)}</p>
-                                    <ul style={{ listStyle: 'none', padding: 0 }}>
-                                        {categoryData.categories.map((cat) => (
-                                            <li key={cat.category} style={{ 
-                                                padding: '0.5rem 0', 
-                                                borderBottom: `1px solid var(--border-color)` 
-                                            }}>
-                                                <strong>{cat.category}:</strong> ${cat.total.toFixed(2)} ({cat.percentage}%)
-                                            </li>
-                                        ))}
-                                    </ul>
+                    {/* Charts */}
+                    <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        <div className="lg:col-span-2">
+                            <div className="rounded-xl border bg-card p-6 shadow-sm">
+                                <div className="mb-4">
+                                    <h3 className="text-lg font-semibold">Revenue Trend</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Daily revenue over time
+                                    </p>
                                 </div>
-                            </>
-                        ) : (
-                            <div style={{ 
-                                padding: '2rem', 
-                                background: 'var(--bg-secondary)', 
-                                borderRadius: '8px', 
-                                textAlign: 'center', 
-                                gridColumn: '1 / -1',
-                                color: 'var(--text-primary)',
-                                border: `1px solid var(--border-color)`,
-                            }}>
-                                <p>No category data available.</p>
+                                {revenueData && revenueData.data.length > 0 ? (
+                                    <RevenueChart
+                                        data={revenueData.data}
+                                        anomalies={showAnomalies ? anomalyData?.anomalies : undefined}
+                                        onDateClick={handleDateClick}
+                                    />
+                                ) : (
+                                    <div className="flex h-64 flex-col items-center justify-center space-y-2 text-center">
+                                        <p className="text-sm font-medium text-card-foreground">
+                                            No revenue data yet
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Upload a CSV to unlock trend visualizations.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
-                        )}
+                        </div>
+
+                        <div>
+                            <div className="rounded-xl border bg-card p-6 shadow-sm">
+                                <div className="mb-4">
+                                    <h3 className="text-lg font-semibold">Category Breakdown</h3>
+                                </div>
+
+                                {categoryData && categoryData.categories.length > 0 ? (
+                                    <>
+                                        <CategoryChart data={categoryData.categories} onCategoryClick={handleCategoryClick} />
+                                    </>
+                                ) : (
+                                    <div className="flex h-64 flex-col items-center justify-center space-y-2 text-center">
+                                        <p className="text-sm font-medium text-card-foreground">
+                                            No category data yet
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Upload data to see how categories compare.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    {customerStats && <CustomerStats data={customerStats} />}
-                    
-                    {/* AI Insights */}
-                    <InsightsBox insights={insights || ''} loading={insightsLoading} />
+                    {/* Customer Stats and Insights */}
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        {customerStats && (
+                            <div className="rounded-xl border bg-card p-6 shadow-sm">
+                                <CustomerStats data={customerStats} />
+                            </div>
+                        )}
+                        <InsightsBox insights={insights || ""} loading={insightsLoading} />
+                    </div>
                 </>
             )}
+
+            <SalesDetailDrawer
+                isOpen={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                filterType={drawerFilterType}
+                filterValue={drawerFilterValue}
+            />
         </div>
     );
 }

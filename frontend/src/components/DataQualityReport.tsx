@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AlertTriangle, AlertCircle, CheckCircle2, ChevronDown } from 'lucide-react';
 import { ValidationIssue, ValidationSummary } from '../types';
 
 interface DataQualityReportProps {
@@ -7,7 +8,70 @@ interface DataQualityReportProps {
   summary: ValidationSummary;
 }
 
-export default function DataQualityReport({ warnings, errors, summary }: DataQualityReportProps) {
+function IssueTable({
+  title,
+  icon: Icon,
+  rows,
+}: {
+  title: string;
+  icon: typeof AlertTriangle;
+  rows: ValidationIssue[];
+}) {
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+        <Icon className="h-4 w-4" />
+        {title}
+      </div>
+      <div className="overflow-x-auto rounded-xl border">
+        <table className="w-full min-w-[480px] text-sm">
+          <thead className="bg-muted text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3 text-left font-semibold">Type</th>
+              <th className="px-4 py-3 text-left font-semibold">Message</th>
+              <th className="px-4 py-3 text-right font-semibold">Count</th>
+              <th className="px-4 py-3 text-right font-semibold">%</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border bg-card">
+            {rows.map((issue, idx) => (
+              <tr key={`${issue.type}-${idx}`} className="transition-colors hover:bg-accent">
+                <td className="px-4 py-3 font-medium text-card-foreground">{issue.type}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {issue.message}
+                  {issue.examples && issue.examples.length > 0 && (
+                    <p className="mt-1 text-xs">
+                      Examples:{' '}
+                      {issue.examples
+                        .slice(0, 3)
+                        .map((example) => example.message || `Row ${example.row}`)
+                        .join(', ')}
+                      {issue.examples.length > 3 && '…'}
+                    </p>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right font-semibold text-card-foreground">
+                  {issue.count ?? '—'}
+                </td>
+                <td className="px-4 py-3 text-right text-muted-foreground">
+                  {issue.percentage !== undefined ? `${issue.percentage}%` : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default function DataQualityReport({
+  warnings,
+  errors,
+  summary,
+}: DataQualityReportProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!summary.has_warnings && !summary.has_errors) {
@@ -15,121 +79,51 @@ export default function DataQualityReport({ warnings, errors, summary }: DataQua
   }
 
   return (
-    <div style={{ 
-      marginTop: '1rem', 
-      padding: '1rem', 
-      background: 'var(--bg-secondary)', 
-      borderRadius: '4px', 
-      border: `1px solid var(--border-color)`,
-      transition: 'background-color 0.3s ease, border-color 0.3s ease',
-    }}>
-      <div 
-        style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          cursor: 'pointer',
-          userSelect: 'none'
-        }}
-        onClick={() => setIsExpanded(!isExpanded)}
+    <div className="rounded-xl border bg-card shadow-sm">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="flex w-full items-center justify-between rounded-t-xl border-b px-6 py-4 text-left transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
       >
         <div>
-          <strong>Data Quality Report</strong>
-          <span style={{ marginLeft: '1rem', fontSize: '0.9rem', color: '#666' }}>
-            {summary.warning_count} warning{summary.warning_count !== 1 ? 's' : ''}
-            {summary.error_count > 0 && `, ${summary.error_count} error${summary.error_count !== 1 ? 's' : ''}`}
-          </span>
+          <h3 className="text-lg font-semibold">Data Quality Report</h3>
+          <p className="text-sm text-muted-foreground">
+            {summary.warning_count} warning{summary.warning_count === 1 ? '' : 's'} ·{' '}
+            {summary.error_count} error{summary.error_count === 1 ? '' : 's'}
+          </p>
         </div>
-        <span style={{ fontSize: '1.2rem' }}>{isExpanded ? '▼' : '▶'}</span>
-      </div>
+        <ChevronDown
+          className={`h-5 w-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+        />
+      </button>
 
       {isExpanded && (
-        <div style={{ marginTop: '1rem' }}>
-          {/* Summary */}
-          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '4px' }}>
-            <p style={{ margin: '0 0 0.5rem 0' }}>
-              <strong>Summary:</strong> {summary.valid_rows} of {summary.total_rows} rows are valid
-            </p>
-            {summary.error_count > 0 && (
-              <p style={{ margin: 0, color: '#dc3545' }}>
-                <strong>Errors:</strong> {summary.error_count} issue{summary.error_count !== 1 ? 's' : ''} detected
-              </p>
-            )}
-            {summary.warning_count > 0 && (
-              <p style={{ margin: 0, color: '#856404' }}>
-                <strong>Warnings:</strong> {summary.warning_count} issue{summary.warning_count !== 1 ? 's' : ''} detected
-              </p>
-            )}
+        <div className="space-y-6 px-6 py-5">
+          <div className="rounded-xl border border-dashed bg-muted/50 p-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className="inline-flex items-center gap-1 text-card-foreground">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                {summary.valid_rows} of {summary.total_rows} rows are valid
+              </span>
+              {summary.error_count > 0 && (
+                <span className="inline-flex items-center gap-1 text-card-foreground">
+                  <AlertCircle className="h-4 w-4 text-primary" />
+                  {summary.error_count} blocking issues detected
+                </span>
+              )}
+              {summary.warning_count > 0 && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                  {summary.warning_count} warnings highlighted
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Errors Table */}
-          {errors.length > 0 && (
-            <div style={{ marginBottom: '1rem' }}>
-              <h4 style={{ margin: '0 0 0.5rem 0', color: '#dc3545' }}>Errors</h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '4px', overflow: 'hidden' }}>
-                <thead style={{ background: '#f8f9fa' }}>
-                  <tr>
-                    <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Type</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Message</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'right', borderBottom: '1px solid #dee2e6' }}>Count</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'right', borderBottom: '1px solid #dee2e6' }}>%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {errors.map((error, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #dee2e6' }}>
-                      <td style={{ padding: '0.5rem' }}>{error.type}</td>
-                      <td style={{ padding: '0.5rem' }}>{error.message}</td>
-                      <td style={{ padding: '0.5rem', textAlign: 'right' }}>{error.count || '-'}</td>
-                      <td style={{ padding: '0.5rem', textAlign: 'right' }}>
-                        {error.percentage !== undefined ? `${error.percentage}%` : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Warnings Table */}
-          {warnings.length > 0 && (
-            <div>
-              <h4 style={{ margin: '0 0 0.5rem 0', color: '#856404' }}>Warnings</h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '4px', overflow: 'hidden' }}>
-                <thead style={{ background: '#f8f9fa' }}>
-                  <tr>
-                    <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Type</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Message</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'right', borderBottom: '1px solid #dee2e6' }}>Count</th>
-                    <th style={{ padding: '0.5rem', textAlign: 'right', borderBottom: '1px solid #dee2e6' }}>%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {warnings.map((warning, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #dee2e6' }}>
-                      <td style={{ padding: '0.5rem' }}>{warning.type}</td>
-                      <td style={{ padding: '0.5rem' }}>
-                        {warning.message}
-                        {warning.examples && warning.examples.length > 0 && (
-                          <div style={{ marginTop: '0.25rem', fontSize: '0.85rem', color: '#666' }}>
-                            Examples: {warning.examples.slice(0, 3).map(ex => ex.message || `Row ${ex.row}`).join(', ')}
-                            {warning.examples.length > 3 && '...'}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '0.5rem', textAlign: 'right' }}>{warning.count || '-'}</td>
-                      <td style={{ padding: '0.5rem', textAlign: 'right' }}>
-                        {warning.percentage !== undefined ? `${warning.percentage}%` : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {errors.length > 0 && <IssueTable title="Errors" icon={AlertCircle} rows={errors} />}
+          {warnings.length > 0 && <IssueTable title="Warnings" icon={AlertTriangle} rows={warnings} />}
         </div>
       )}
     </div>
   );
 }
-

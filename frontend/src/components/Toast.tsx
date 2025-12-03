@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { CheckCircle2, Info, X, XCircle } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -9,71 +10,42 @@ interface ToastProps {
   duration?: number;
 }
 
+const variantStyles: Record<ToastType, { icon: typeof CheckCircle2; wrapper: string }> = {
+  success: {
+    icon: CheckCircle2,
+    wrapper: "bg-primary/10 text-primary",
+  },
+  error: {
+    icon: XCircle,
+    wrapper: "bg-accent text-card-foreground",
+  },
+  info: {
+    icon: Info,
+    wrapper: "bg-muted text-card-foreground",
+  },
+};
+
 export default function Toast({ message, type, onClose, duration = 3000 }: ToastProps) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, duration);
-
+    const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  const colors = {
-    success: { bg: '#d4edda', border: '#c3e6cb', text: '#155724', icon: '✓' },
-    error: { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24', icon: '✕' },
-    info: { bg: '#d1ecf1', border: '#bee5eb', text: '#0c5460', icon: 'ℹ' },
-  };
-
-  const color = colors[type];
+  const variant = variantStyles[type];
+  const Icon = variant.icon;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        zIndex: 10000,
-        minWidth: '300px',
-        maxWidth: '500px',
-        padding: '1rem 1.5rem',
-        background: color.bg,
-        border: `1px solid ${color.border}`,
-        color: color.text,
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        animation: 'slideIn 0.3s ease-out',
-      }}
-    >
-      <style>{`
-        @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-      `}</style>
-      <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{color.icon}</span>
-      <span style={{ flex: 1 }}>{message}</span>
+    <div className="flex min-w-[320px] max-w-md items-start gap-3 rounded-xl border bg-card px-4 py-3 text-sm shadow-xl">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${variant.wrapper}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <p className="flex-1 text-card-foreground">{message}</p>
       <button
         onClick={onClose}
-        style={{
-          background: 'none',
-          border: 'none',
-          color: color.text,
-          fontSize: '1.5rem',
-          cursor: 'pointer',
-          padding: '0',
-          lineHeight: '1',
-        }}
+        className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
+        aria-label="Dismiss"
       >
-        ×
+        <X className="h-4 w-4" />
       </button>
     </div>
   );
@@ -90,21 +62,12 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
       {toasts.map((toast, index) => (
         <div
           key={toast.id}
-          style={{
-            position: 'fixed',
-            top: `${20 + index * 80}px`,
-            right: '20px',
-            zIndex: 10000 - index,
-          }}
+          className="fixed right-5 z-50 transition-transform"
+          style={{ top: `${20 + index * 80}px` }}
         >
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => onRemove(toast.id)}
-          />
+          <Toast message={toast.message} type={toast.type} onClose={() => onRemove(toast.id)} />
         </div>
       ))}
     </>
   );
 }
-

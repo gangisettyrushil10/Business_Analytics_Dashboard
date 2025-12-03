@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { searchSales } from '../api/client';
 import { Sale } from '../types';
 
@@ -17,7 +18,7 @@ export default function SalesDetailDrawer({ isOpen, onClose, filterType, filterV
 
   useEffect(() => {
     if (isOpen && filterType && filterValue) {
-      fetchSales();
+      void fetchSales();
     }
   }, [isOpen, filterType, filterValue]);
 
@@ -28,8 +29,8 @@ export default function SalesDetailDrawer({ isOpen, onClose, filterType, filterV
     setError(null);
 
     try {
-      const params: any = {
-        limit: 1000, // get all matching sales
+      const params: Record<string, string | number> = {
+        limit: 1000,
         offset: 0,
       };
 
@@ -54,125 +55,85 @@ export default function SalesDetailDrawer({ isOpen, onClose, filterType, filterV
   const getTitle = () => {
     if (filterType === 'date') {
       return `Transactions on ${filterValue}`;
-    } else if (filterType === 'category') {
+    }
+    if (filterType === 'category') {
       return `Transactions in ${filterValue}`;
     }
     return 'Transaction Details';
   };
 
   return (
-    <>
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 flex">
       <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 1000,
-        }}
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Drawer */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: '600px',
-          maxWidth: '90vw',
-          background: 'white',
-          boxShadow: '-2px 0 8px rgba(0, 0, 0, 0.15)',
-          zIndex: 1001,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            padding: '1.5rem',
-            borderBottom: '1px solid #dee2e6',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <h2 style={{ margin: 0 }}>{getTitle()}</h2>
+      <div className="ml-auto flex h-full w-full max-w-xl flex-col border-l bg-card shadow-2xl">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <div>
+            <h2 className="text-lg font-semibold">{getTitle()}</h2>
+            <p className="text-sm text-muted-foreground">
+              {total.toLocaleString()} matching transactions
+            </p>
+          </div>
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.5rem',
-              cursor: 'pointer',
-              color: '#666',
-              padding: '0.25rem 0.5rem',
-            }}
+            className="rounded-lg border bg-background p-2 text-muted-foreground transition-all hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
-            ×
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem' }}>
+        <div className="flex-1 overflow-auto px-6 py-4">
           {loading && (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <p>Loading transactions...</p>
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-muted-foreground">Loading transactions…</p>
             </div>
           )}
 
           {error && (
-            <div style={{ padding: '1rem', background: '#fee', color: '#c00', borderRadius: '4px' }}>
-              <strong>Error:</strong> {error}
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm text-primary">
+              {error}
             </div>
           )}
 
           {!loading && !error && (
             <>
-              <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '4px' }}>
-                <p style={{ margin: 0 }}>
-                  <strong>Total Transactions:</strong> {total}
-                </p>
+              <div className="mb-4 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+                <span className="font-semibold text-card-foreground">{total}</span>{' '}
+                total records • Showing up to 1,000 recent entries
               </div>
 
               {sales.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                  <p>No transactions found.</p>
+                <div className="flex h-48 flex-col items-center justify-center space-y-2 rounded-xl border border-dashed">
+                  <p className="text-sm font-medium text-card-foreground">No transactions found</p>
+                  <p className="text-sm text-muted-foreground">
+                    Adjust your filters and try again.
+                  </p>
                 </div>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead style={{ background: '#f8f9fa', position: 'sticky', top: 0 }}>
+                <div className="overflow-x-auto rounded-xl border">
+                  <table className="w-full min-w-[520px] text-sm">
+                    <thead className="bg-muted text-xs uppercase text-muted-foreground">
                       <tr>
-                        <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>
-                          Date
-                        </th>
-                        <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>
-                          Category
-                        </th>
-                        <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #dee2e6' }}>
-                          Amount
-                        </th>
-                        <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #dee2e6' }}>
-                          Customer ID
-                        </th>
+                        <th className="px-4 py-3 text-left font-semibold">Date</th>
+                        <th className="px-4 py-3 text-left font-semibold">Category</th>
+                        <th className="px-4 py-3 text-right font-semibold">Amount</th>
+                        <th className="px-4 py-3 text-right font-semibold">Customer ID</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border bg-card">
                       {sales.map((sale) => (
-                        <tr key={sale.id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                          <td style={{ padding: '0.75rem' }}>{sale.date}</td>
-                          <td style={{ padding: '0.75rem' }}>{sale.category}</td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 'bold' }}>
+                        <tr key={sale.id} className="transition-colors hover:bg-accent">
+                          <td className="px-4 py-3 font-medium">{sale.date}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{sale.category}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-card-foreground">
                             ${sale.amount.toFixed(2)}
                           </td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right' }}>{sale.customerID}</td>
+                          <td className="px-4 py-3 text-right text-muted-foreground">
+                            {sale.customerID}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -183,7 +144,6 @@ export default function SalesDetailDrawer({ isOpen, onClose, filterType, filterV
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
-

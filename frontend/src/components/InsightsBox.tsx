@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 
 interface InsightsBoxProps {
   insights: string;
@@ -10,30 +11,23 @@ export default function InsightsBox({ insights, loading = false }: InsightsBoxPr
 
   if (loading) {
     return (
-      <div style={{ 
-        marginTop: '2rem', 
-        padding: '1.5rem', 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
-        borderRadius: '8px',
-        color: 'white',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ 
-            width: '20px', 
-            height: '20px', 
-            border: '3px solid rgba(255,255,255,0.3)', 
-            borderTopColor: 'white',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <span>Generating AI insights...</span>
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="animate-pulse space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+              <Sparkles className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Generating AI insights
+              </p>
+              <p className="text-xs text-muted-foreground">
+                This usually takes a few seconds
+              </p>
+            </div>
+          </div>
+          <div className="h-24 rounded-lg bg-muted" />
         </div>
-        <style>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
       </div>
     );
   }
@@ -43,54 +37,41 @@ export default function InsightsBox({ insights, loading = false }: InsightsBoxPr
   }
 
   return (
-    <div style={{ 
-      marginTop: '2rem', 
-      background: 'var(--bg-secondary)', 
-      borderRadius: '8px',
-      boxShadow: `0 2px 8px var(--shadow)`,
-      overflow: 'hidden',
-      border: `1px solid var(--border-color)`,
-      transition: 'background-color 0.3s ease, border-color 0.3s ease',
-    }}>
-      {/* Header */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '1rem 1.5rem',
-          cursor: 'pointer',
-          userSelect: 'none',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-        onClick={() => setIsExpanded(!isExpanded)}
+    <div className="rounded-xl border bg-card shadow-sm transition-all hover:shadow-lg">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between rounded-t-xl border-b bg-gradient-to-r from-primary/80 to-primary px-6 py-4 text-primary-foreground transition-all hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-primary/20"
+        onClick={() => setIsExpanded((prev) => !prev)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '1.5rem' }}>🤖</span>
-          <h3 style={{ margin: 0, fontSize: 'clamp(1rem, 3vw, 1.2rem)' }}>AI-Generated Insights</h3>
-        </div>
-        <span style={{ fontSize: '1.2rem' }}>{isExpanded ? '▼' : '▶'}</span>
-      </div>
-
-      {/* Content */}
-      {isExpanded && (
-        <div style={{ padding: '1.5rem' }}>
-          <div style={{
-            lineHeight: '1.8',
-            color: 'var(--text-primary)',
-            whiteSpace: 'pre-wrap',
-            fontSize: 'clamp(0.9rem, 2vw, 1rem)',
-          }}>
-            {insights.split('\n').map((paragraph, idx) => (
-              <p key={idx} style={{ margin: idx === 0 ? '0 0 1rem 0' : '0 0 1rem 0' }}>
-                {paragraph}
-              </p>
-            ))}
+        <div className="flex items-center gap-3 text-left">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-foreground/20">
+            <Sparkles className="h-5 w-5" />
           </div>
+          <div>
+            <p className="text-lg font-semibold tracking-tight">
+              AI-Generated Insights
+            </p>
+            <p className="text-sm text-primary-foreground/80">
+              Strategic recommendations tailored to your data
+            </p>
+          </div>
+        </div>
+        {isExpanded ? (
+          <ChevronDown className="h-5 w-5" />
+        ) : (
+          <ChevronRight className="h-5 w-5" />
+        )}
+      </button>
+
+      {isExpanded && (
+        <div className="space-y-3 px-6 py-5 text-sm leading-relaxed text-card-foreground">
+          {insights.split('\n').map((paragraph, idx) => (
+            <p key={`${paragraph}-${idx}`} className="text-sm">
+              {paragraph}
+            </p>
+          ))}
         </div>
       )}
     </div>
   );
 }
-

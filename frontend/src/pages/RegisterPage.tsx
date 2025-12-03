@@ -38,130 +38,78 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      minHeight: '80vh',
-      padding: '2rem'
-    }}>
-      <div style={{ 
-        width: '100%', 
-        maxWidth: '400px', 
-        padding: '2rem', 
-        background: 'white', 
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <h1 style={{ marginTop: 0, marginBottom: '1.5rem', textAlign: 'center' }}>
-          Register
-        </h1>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+      <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm transition-all hover:shadow-lg">
+        <div className="mb-8 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            Lumina Intelligence
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-card-foreground">
+            Create your account
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Access forecasting, anomaly detection, and AI-powered insights.
+          </p>
+        </div>
 
         {error && (
-          <div style={{ 
-            marginBottom: '1rem', 
-            padding: '0.75rem', 
-            background: '#fee', 
-            color: '#c00', 
-            borderRadius: '4px' 
-          }}>
+          <div className="mb-4 rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 text-sm text-primary">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              Email
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-card-foreground">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '4px',
-                border: '1px solid #ddd',
-                fontSize: '1rem',
-              }}
+              className="w-full rounded-lg border bg-background px-3.5 py-2 text-sm transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              Password
-            </label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-card-foreground">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
               minLength={6}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '4px',
-                border: '1px solid #ddd',
-                fontSize: '1rem',
-              }}
+              disabled={loading}
+              className="w-full rounded-lg border bg-background px-3.5 py-2 text-sm transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-              Confirm Password
-            </label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-card-foreground">Confirm password</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              disabled={loading}
               minLength={6}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '4px',
-                border: '1px solid #ddd',
-                fontSize: '1rem',
-              }}
+              disabled={loading}
+              className="w-full rounded-lg border bg-background px-3.5 py-2 text-sm transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
-
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              fontSize: '1rem',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-              marginBottom: '1rem',
-            }}
+            className="w-full rounded-lg bg-primary py-3 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? 'Creating account…' : 'Create account'}
           </button>
-
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ margin: 0, color: '#666' }}>
-              Already have an account?{' '}
-              <Link to="/login" style={{ color: '#007bff', textDecoration: 'none' }}>
-                Login here
-              </Link>
-            </p>
-          </div>
         </form>
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   );
 }
-

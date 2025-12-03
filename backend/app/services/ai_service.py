@@ -92,8 +92,18 @@ Keep the response concise (2-3 paragraphs) and focused on business value."""
         return insights
         
     except Exception as e:
+        error_msg = str(e).lower()
         logger.error(f"error generating ai insights: {str(e)}")
-        raise ValueError(f"failed to generate insights: {str(e)}")
+        
+        # Handle specific OpenAI API errors
+        if "quota" in error_msg or "rate limit" in error_msg or "billing" in error_msg:
+            raise ValueError("OpenAI API quota exceeded. Please check your API billing or try again later.")
+        elif "api key" in error_msg or "authentication" in error_msg:
+            raise ValueError("OpenAI API key is invalid or not configured. Please check your API key.")
+        elif "insufficient" in error_msg or "balance" in error_msg:
+            raise ValueError("Insufficient OpenAI API credits. Please add credits to your account.")
+        else:
+            raise ValueError(f"Failed to generate insights: {str(e)}")
 
 
 def format_revenue_data(revenue_data: List[Dict]) -> str:

@@ -19,44 +19,44 @@ function App() {
         <ToastProvider>
           <AuthProvider>
             <Router>
-              <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', transition: 'background-color 0.3s ease' }}>
+              <div className="min-h-screen bg-background transition-colors">
                 <Navigation />
                 <ErrorBoundary>
                   <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/upload"
-                  element={
-                    <ProtectedRoute>
-                      <UploadPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/forecast"
-                  element={
-                    <ProtectedRoute>
-                      <ForecastPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/transform"
-                  element={
-                    <ProtectedRoute>
-                      <TransformPage />
-                    </ProtectedRoute>
-                  }
-                />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route
+                      path="/"
+                      element={
+                        <ProtectedRoute>
+                          <DashboardPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/upload"
+                      element={
+                        <ProtectedRoute>
+                          <UploadPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/forecast"
+                      element={
+                        <ProtectedRoute>
+                          <ForecastPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/transform"
+                      element={
+                        <ProtectedRoute>
+                          <TransformPage />
+                        </ProtectedRoute>
+                      }
+                    />
                   </Routes>
                 </ErrorBoundary>
               </div>
